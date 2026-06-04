@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rose & Jones — BA Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#081f2c;--navy2:#0d2d40;--rose:#e86a64;--sand:#f5f2ee;--sand2:#ede9e3;
+  --white:#ffffff;--grey:#888;--border:#e2ddd8;--text:#1a1a1a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--text);min-height:100vh;padding-bottom:80px}
+.header{background:var(--navy);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--rose);display:flex;align-items:center;justify-content:center;color:var(--rose);font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic}
+.logo-text{color:var(--white)}
+.logo-name{font-size:12px;font-weight:500;letter-spacing:0.14em;text-transform:uppercase}
+.logo-tagline{font-family:'Cormorant Garamond',serif;font-size:12px;color:var(--rose);font-style:italic;margin-top:1px}
+.header-right{display:flex;align-items:center;gap:12px}
+.header-date{color:rgba(255,255,255,0.4);font-size:11px}
+.sync-status{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:500;transition:all 0.3s}
+.sync-status.synced{background:rgba(232,106,100,0.15);color:var(--rose);border:1px solid rgba(232,106,100,0.3)}
+.sync-status.syncing{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.15)}
+.sync-status.error{background:rgba(200,50,50,0.2);color:#ff8080;border:1px solid rgba(200,50,50,0.3)}
+.metrics-bar{background:var(--navy2);padding:14px 28px;display:grid;grid-template-columns:repeat(5,1fr);border-bottom:3px solid var(--rose)}
+.metric{padding:10px 16px;text-align:center}
+.metric-val{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:var(--white);line-height:1}
+.metric-label{font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.1em;margin-top:3px}
+.tabs{display:flex;padding:0 28px;background:var(--white);border-bottom:1px solid var(--border)}
+.tab{padding:14px 20px;font-size:11px;cursor:pointer;background:transparent;border:none;color:var(--grey);letter-spacing:0.08em;text-transform:uppercase;font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:'DM Sans',sans-serif}
+.tab.on{color:var(--navy);border-bottom-color:var(--rose)}
+.main{padding:24px 28px;max-width:1400px;margin:0 auto}
+.client-grid{display:flex;flex-wrap:nowrap;gap:16px;overflow-x:auto;padding-bottom:12px}.client-grid::-webkit-scrollbar{height:5px}.client-grid::-webkit-scrollbar-track{background:transparent}.client-grid::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}.client-card{min-width:300px;max-width:300px;flex-shrink:0}
+.client-card{background:var(--white);border-radius:8px;overflow:hidden;border:1px solid var(--border);transition:box-shadow 0.2s}
+.client-card:hover{box-shadow:0 4px 20px rgba(8,31,44,0.08)}
+.card-header{background:var(--navy);padding:13px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.card-name{color:var(--white);font-size:13px;font-weight:500;flex:1;line-height:1.3}
+.badge-group{display:flex;flex-wrap:wrap;gap:4px;flex-shrink:0}
+.badge{font-size:9px;padding:3px 7px;border-radius:3px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap}
+.badge.active{background:rgba(232,106,100,0.2);color:var(--rose);border:1px solid rgba(232,106,100,0.35)}
+.badge.pause{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.45);border:1px solid rgba(255,255,255,0.15)}
+.badge.settling{background:var(--rose);color:var(--white)}
+.badge.offer-badge{background:#e67e22;color:var(--white)}
+.badge.urgent{background:#c0392b;color:var(--white)}
+.offer-select{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;border-radius:3px;padding:3px 7px;cursor:pointer;outline:none;appearance:auto;-webkit-appearance:auto;background:#e67e22;color:var(--white);border:none}
+.offer-select.unconditional{background:#27ae60}
+.offer-select.exchanged{background:#8e44ad}
+.badge.lead{background:rgba(39,174,96,0.2);color:#1e8449;border:1px solid rgba(39,174,96,0.35)}
+.pipeline-section{margin-bottom:10px;margin-top:24px}
+.pipeline-section:first-child{margin-top:0}
+.pipeline-heading{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.pipeline-heading-label{font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--grey)}
+.pipeline-heading-line{flex:1;height:1px;background:var(--border)}
+.pipeline-heading-count{font-size:10px;color:#bbb;font-weight:400}
+.card-body{padding:14px}
+.info-row{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--grey);margin-bottom:5px}
+.info-row .val{color:var(--navy)}
+.info-icon{color:var(--rose);font-size:13px;flex-shrink:0;margin-top:1px}
+.divider{border:none;border-top:1px solid var(--sand2);margin:10px 0}
+.section-label{font-size:9px;color:#bbb;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px;font-weight:500}
+.prop-item{background:var(--sand);border-radius:4px;padding:6px 8px;margin-bottom:4px;border-left:2px solid var(--rose);display:flex;align-items:flex-start;gap:6px}
+.prop-left{flex:1;min-width:0}
+.prop-addr{font-size:11px;font-weight:500;color:var(--navy);line-height:1.3}
+.prop-note{font-size:10px;color:var(--grey);margin-top:2px;line-height:1.4}
+.prop-right{display:flex;align-items:center;gap:4px;flex-shrink:0;margin-top:1px}
+.prop-status{font-size:9px;padding:2px 6px;border-radius:3px;text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap;font-weight:500}
+.prop-status.interested{background:#e8f4fd;color:#1565a8}
+.prop-status.offer{background:#fff3e0;color:#b35c00}
+.prop-status.passed{background:#f0f0f0;color:#aaa}
+.prop-status.watching{background:#f0eef8;color:#5555aa}
+.prop-status-select{font-family:'DM Sans',sans-serif;font-size:9px;padding:2px 5px;border-radius:3px;text-transform:uppercase;letter-spacing:0.05em;font-weight:500;cursor:pointer;border:none;outline:none;appearance:none;-webkit-appearance:none;padding-right:14px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath fill='%23888' d='M0 0l4 5 4-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 3px center}
+.prop-status-select.interested{background-color:#e8f4fd;color:#1565a8}
+.prop-status-select.watching{background-color:#f0eef8;color:#5555aa}
+.prop-status-select.offer{background-color:#fff3e0;color:#b35c00}
+.prop-status-select.passed{background-color:#f0f0f0;color:#aaa}
+.prop-status-select option{color:var(--navy);background:var(--white);text-transform:none;letter-spacing:0}
+.prop-delete{background:none;border:none;cursor:pointer;color:#ddd;font-size:12px;padding:0;line-height:1}
+.prop-delete:hover{color:#999}
+.add-prop{display:flex;gap:5px;margin-top:6px}
+.add-prop input,.add-prop select{font-size:11px;padding:5px 7px;border:1px solid var(--border);border-radius:4px;background:#fafafa;color:var(--navy);font-family:'DM Sans',sans-serif}
+.add-prop input{flex:1}
+.add-prop button{font-size:11px;padding:5px 10px;border:none;border-radius:4px;background:var(--navy);color:var(--white);cursor:pointer;font-family:'DM Sans',sans-serif}
+.notes-textarea{width:100%;font-size:12px;padding:8px 9px;border:1px solid var(--border);border-radius:4px;background:#fafafa;color:var(--navy);resize:vertical;min-height:55px;font-family:'DM Sans',sans-serif;line-height:1.5}
+.save-btn{margin-top:5px;font-size:11px;padding:4px 12px;border:1px solid var(--rose);border-radius:4px;background:transparent;color:var(--rose);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s}
+.save-btn:hover{background:var(--rose);color:var(--white)}
+.editable{cursor:pointer;border-bottom:1px dashed rgba(232,106,100,0.4);transition:border-color 0.15s;display:inline}
+.editable:hover{border-bottom-color:var(--rose)}
+.edit-input{font-family:'DM Sans',sans-serif;font-size:inherit;color:inherit;background:rgba(255,255,255,0.12);border:none;border-bottom:1px solid var(--rose);outline:none;padding:1px 3px}
+.edit-input.dark{color:var(--white)}
+.status-select{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;border-radius:3px;padding:3px 10px 3px 7px;cursor:pointer;outline:none;appearance:auto;-webkit-appearance:auto;min-width:70px}
+.status-select.active{background:rgba(232,106,100,0.2);color:var(--rose);border:1px solid rgba(232,106,100,0.35)}
+.status-select.pause{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.45);border:1px solid rgba(255,255,255,0.15)}
+.status-select.lead{background:rgba(39,174,96,0.2);color:#1e8449;border:1px solid rgba(39,174,96,0.35)}
+.status-select.settling{background:var(--rose);color:var(--white);border:1px solid var(--rose)}
+.status-select option{color:var(--navy);background:var(--white);text-transform:none;letter-spacing:0;font-weight:400}
+.tasks-container{max-width:800px}
+.task-card{background:var(--white);border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.task-header{background:var(--navy);padding:13px 18px;display:flex;align-items:center;justify-content:space-between}
+.task-header-title{color:var(--white);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:500}
+.task-header-count{background:var(--rose);color:var(--white);font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500}
+.task-body{padding:16px}
+.task-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--sand2)}
+.task-row:last-child{border-bottom:none}
+.task-check{width:15px;height:15px;flex-shrink:0;cursor:pointer;accent-color:var(--rose)}
+.task-label{font-size:13px;color:var(--navy);flex:1;line-height:1.4}
+.task-client{font-size:11px;color:var(--rose);white-space:nowrap;flex-shrink:0}
+.task-del{background:none;border:none;cursor:pointer;color:#ddd;font-size:13px;padding:0 0 0 4px}
+.task-del:hover{color:#999}
+.task-row.done .task-label{color:#ccc;text-decoration:line-through}
+.task-row.done .task-client{color:#ddd}
+.add-task-row{display:flex;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--sand2)}
+.add-task-row input{flex:1;font-size:12px;padding:7px 10px;border:1px solid var(--border);border-radius:4px;background:#fafafa;color:var(--navy);font-family:'DM Sans',sans-serif}
+.add-task-row select{font-size:12px;padding:7px 8px;border:1px solid var(--border);border-radius:4px;background:#fafafa;color:var(--navy);font-family:'DM Sans',sans-serif}
+.add-task-row button{font-size:12px;padding:7px 14px;border:none;border-radius:4px;background:var(--rose);color:var(--white);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500}
+.empty-tasks{font-size:13px;color:#ccc;padding:16px 0;text-align:center;font-style:italic}
+.loading{text-align:center;padding:60px;color:var(--grey);font-size:14px}
+.loading-spinner{display:inline-block;width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--rose);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.chat-typing span:nth-child(2){animation-delay:0.2s}
+.chat-typing span:nth-child(3){animation-delay:0.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.chat-send:disabled{opacity:0.5;cursor:not-allowed}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">&</div>
+    <div class="logo-text">
+      <div class="logo-name">ROSE <span style="font-weight:300">&</span> JONES</div>
+      <div class="logo-tagline">it's personal</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="header-date" id="hdate"></span>
+    <span class="sync-status syncing" id="sync-status">Connecting...</span>
+  </div>
+</div>
+
+<div class="metrics-bar">
+  <div class="metric"><div class="metric-val" id="m-active">—</div><div class="metric-label">Active</div></div>
+  <div class="metric"><div class="metric-val" id="m-leads">—</div><div class="metric-label">Hot Leads</div></div>
+  <div class="metric"><div class="metric-val" id="m-offers">—</div><div class="metric-label">Live Offers</div></div>
+  <div class="metric dk"><div class="metric-val" id="m-uncond">—</div><div class="metric-label">Unconditional</div></div>
+  <div class="metric"><div class="metric-val" id="m-tasks">—</div><div class="metric-label">Tasks remaining</div></div>
+</div>
+
+<div class="tabs">
+  <button class="tab on" onclick="showTab('active',this)">Active</button>
+  <button class="tab" onclick="showTab('lead',this)">Hot Leads</button>
+  <button class="tab" onclick="showTab('pause',this)">Paused</button>
+  <button class="tab" onclick="showTab('unconditional',this)">Unconditional</button>
+  <button class="tab" onclick="showTab('tasks',this)">Daily Tasks</button>
+</div>
+
+<div class="main">
+  <div id="tab-clients">
+    <div id="client-grid" class="client-grid">
+      <div class="loading"><div class="loading-spinner"></div><br>Loading clients...</div>
+    </div>
+  </div>
+  <div id="tab-tasks" style="display:none">
+    <div class="tasks-container">
+      <div id="task-card" class="task-card">
+        <div class="loading"><div class="loading-spinner"></div><br>Loading tasks...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+const SUPA_URL='https://qnnrbwcaqvlsjbweilja.supabase.co/rest/v1';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFubnJid2NhcXZsc2pid2VpbGphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0NTY1MjcsImV4cCI6MjA5NjAzMjUyN30.upIazevjqa-dQ7-dJcoDUe12MghFw6oTWhT5JO2DTPI';
+document.getElementById('hdate').textContent=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+const SEED_CLIENTS=[
+  {id:'krolls',name:'Lucy Summers & Oliver Kroll',status:'active',budget:'$2.25M – $3M+',fee_cap:'$40,000',started:'Nov 2025',expires:'May 2026',notes:'Currently in Germany 22 May–13 June. Back mid-June. Walk-to-beach, pool, yard for Juliana, 4 bed. Mermaid, Burleigh, Miami preferred. No duplexes without pool/garden. Bargain or no deal.'},
+  {id:'comeau',name:'Ella & Drew Comeau',status:'active',budget:'$2M – $2.9M',fee_cap:'$45,000',started:'Feb 2026',expires:'Aug 2026',notes:'Character home in Ashmore/Benowa. 4+ bed, big flat yard, pool, open plan. Prefer move-in ready. Have a dog. Drew likes character/high ceilings/exposed brick.'},
+  {id:'taylor',name:'Jennifer Taylor',status:'active',budget:'$1.3M – $1.8M',fee_cap:'$24,000',started:'Apr 2026',expires:'Oct 2026',notes:'Searching with Jacqueline Morrison. Needs motorhome space. South of Christine Ave. No flight path. Pool preferred. Vendor on Tussock will accept $1.75M — awaiting contract reissue.'},
+  {id:'cartledge',name:'Nathan & Amanda Cartledge',status:'active',budget:'$1.5M – $1.8M',fee_cap:'$30,000',started:'Apr 2026',expires:'Oct 2026',notes:'Home to live in + investment. Must have plunge pool space. Open to stretching budget. Brief realignment call needed.'},
+  {id:'cassidy',name:'Emma Cassidy',status:'pause',budget:'$1.5M – $2.5M',fee_cap:'$40,000',started:'Dec 2025',expires:'Jun 2026',notes:'Waiting on Martin updated modelling post CGT/neg gearing changes. Wants livable now, strong yield. Not rushing.'},
+  {id:'pongracz',name:'Quinn Pongracz',status:'settling',budget:'$1.64M',fee_cap:'$28,000',started:'Apr 2026',expires:'Oct 2026',notes:'Settling 22 June 2026.'},
+  {id:'daff',name:'Oliver & Carly Daff',status:'pause',budget:'$1.25M – $2M',fee_cap:'$25,000',started:'Feb 2025',expires:'Aug 2025',notes:'On pause — Oliver lost his job.'},
+  {id:'sercombe',name:'Mark & Louise Sercombe',status:'pause',budget:'$900k – $1.5M',fee_cap:'$20,000',started:'Apr 2026',expires:'Oct 2026',notes:'On pause — in UK sorting finances.'},
+  {id:'mcintyre',name:'Melissa & Steve McIntyre',status:'lead',budget:'$1.65M – $2M',fee_cap:'$32,000',started:'May 2026',expires:'Nov 2026',notes:'Investment/renovation project. Target sub $1.85M. 3+ bed, 600sqm+ block, walkable to beach/amenity, North to rear preferred, carport at front + pool/room to add. No arterial roads. Locations: Burleigh Waters, Miami, Mermaid Waters, Palm Beach. Contact: melissa@dellwoodconstructions.com.au'},
+
+  {id:'mcintyre',name:'Melissa & Steve McIntyre',status:'lead',budget:'$1.65M – $2M',fee_cap:'$32,000',started:'',expires:'',notes:'Investment/renovation project. Target sub $1.85M. 3+ bed, 600sqm+ block, walkable to beach/amenity, North to rear preferred, carport at front + pool/room to add. No arterial roads. Locations: Burleigh Waters, Miami, Mermaid Waters, Palm Beach. Contact: melissa@dellwoodconstructions.com.au'},
+  {id:'gareth',name:'Gareth',status:'lead',budget:'$1M – $1.5M',fee_cap:'',started:'',expires:'',notes:'Industrial warehouse investment. Yatala to NSW/QLD border. No proposal signed yet.'},
+  {id:'domcharlotte',name:'Dom & Charlotte',status:'lead',budget:'$900k – $1.2M',fee_cap:'',started:'',expires:'',notes:'Industrial warehouse investment. Yatala & surrounding areas. Min 200sqm lettable area + mezzanine. Tenanted preferred. Small strata block. Target NET yield 6%+. Contact: domenicnesci@gmail.com'},
+];
+const SEED_PROPS=[
+  {client_id:'krolls',addr:'1/12 Avanti St, Mermaid Waters',status:'passed',note:'Bid $2.57M at auction. Now listed $2.995M. Leased.'},
+  {client_id:'krolls',addr:'17 Warrina Cres, Burleigh Waters',status:'watching',note:'Lee Kollosche. Mid-$4M. Neptune build.'},
+  {client_id:'krolls',addr:'2 Eagle Ave, Burleigh Waters',status:'watching',note:'Daycare next door + development — red flags.'},
+  {client_id:'krolls',addr:'1 Aruma Ave, Burleigh Waters',status:'interested',note:'Pre-market. Vendor $2.5M+.'},
+  {client_id:'krolls',addr:'5 Comet Court, Burleigh Waters',status:'watching',note:'New build. Mid-$4M buyer feedback.'},
+  {client_id:'comeau',addr:'1 Carinya Court, Ashmore',status:'offer',note:'2312sqm. Inspection 10 June 10:30AM. Mid-high $2Ms.'},
+  {client_id:'comeau',addr:'35 Reed St, Ashmore',status:'watching',note:'Prev contract fell over — structural works underway.'},
+  {client_id:'comeau',addr:'7 Ainsley Ave, Ashmore',status:'watching',note:'Desperate vendor. Good value at $2.6M.'},
+  {client_id:'comeau',addr:'24 Uplands Drive, Parkwood',status:'interested',note:'Inspection TBC 11 or 12 June. Low-mid $2Ms.'},
+  {client_id:'comeau',addr:'9 Palona, Ashmore',status:'watching',note:'No firm offers. Early offers well below $2M.'},
+  {client_id:'taylor',addr:'29 Tussock Crescent, Elanora',status:'offer',note:'Offer at $1.7M. Vendor will accept $1.75M. Awaiting contract reissue. B&P done.'},
+  {client_id:'cartledge',addr:'57 Wallaby Drive, Mudgeeraba',status:'passed',note:'Sloped land, shed-style garage. Passed.'},
+  {client_id:'cartledge',addr:'128 Sunshine Parade',status:'passed',note:'Master too small, fence issues. Passed.'},
+  {client_id:'cassidy',addr:'39 Wild Duck Drive, Mermaid Waters',status:'passed',note:'Her favourite. Vendors pulled from market.'},
+  {client_id:'pongracz',addr:'9 Rangeview Court',status:'offer',note:'Purchased $1.64M. Settling 22 June.'},
+];
+const SEED_TASKS=[
+  {label:'Tussock — increase offer to $1.75M when contract reissued',client:'Jennifer Taylor',done:false},
+  {label:'Send updated property register',client:'Ella & Drew Comeau',done:false},
+  {label:'Send updated property register',client:'Nathan & Amanda Cartledge',done:false},
+  {label:'1 Carinya Court inspection — 10 June 10:30AM',client:'Ella & Drew Comeau',done:false},
+  {label:'24 Uplands Drive inspection — TBC 11 or 12 June',client:'Ella & Drew Comeau',done:false},
+  {label:'Pongracz settlement — confirm 22 June details',client:'Quinn Pongracz',done:false},
+  {label:'Cartledge strategy call — realign brief',client:'Nathan & Amanda Cartledge',done:false},
+  {label:'Prepare inspection list for Krolls return mid-June',client:'Lucy Summers & Oliver Kroll',done:false},
+  {label:'Follow up Martin re updated modelling',client:'Emma Cassidy',done:false},
+];
+
+let allClients=[],allProps=[],allTasks=[];let chatOpen=false;
+
+function setSyncStatus(s){
+  const el=document.getElementById('sync-status');
+  el.className='sync-status '+s;
+  el.textContent=s==='synced'?'Live ✓':s==='syncing'?'Saving...':'Sync error';
+}
+
+async function supaFetch(method,table,data,query){
+  let url=`${SUPA_URL}/${table}${query||''}`;
+  const opts={method,headers:HEADERS};
+  if(data)opts.body=JSON.stringify(data);
+  const r=await fetch(url,opts);
+  if(!r.ok){
+    const e=await r.text();
+    console.error(`Supabase ${method} ${table}${query||''} failed:`, r.status, e);
+    showToast(`Save failed (${r.status}): ${e.substring(0,80)}`,'error');
+    throw new Error(e);
+  }
+  try{return await r.json();}catch{return null;}
+}
+
+function showToast(msg, type='info'){
+  let t=document.getElementById('toast');
+  if(!t){
+    t=document.createElement('div');
+    t.id='toast';
+    t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 18px;border-radius:6px;font-size:12px;font-family:DM Sans,sans-serif;z-index:9999;max-width:400px;text-align:center;transition:opacity 0.3s';
+    document.body.appendChild(t);
+  }
+  t.textContent=msg;
+  t.style.background=type==='error'?'#c0392b':'#081f2c';
+  t.style.color='#fff';
+  t.style.opacity='1';
+  clearTimeout(t._hide);
+  t._hide=setTimeout(()=>t.style.opacity='0',4000);
+}
+
+async function init(){
+  try{
+    setSyncStatus('syncing');
+    let clients=await supaFetch('GET','clients','','?select=*&order=name');
+    if(!clients||!clients.length){
+      // Only seed if truly empty
+      for(const c of SEED_CLIENTS)await supaFetch('POST','clients',c);
+      for(const p of SEED_PROPS)await supaFetch('POST','properties',p);
+      for(const t of SEED_TASKS)await supaFetch('POST','tasks',t);
+      clients=await supaFetch('GET','clients','','?select=*&order=name')||SEED_CLIENTS;
+    }
+    allClients=clients;
+    allProps=await supaFetch('GET','properties','','?select=*&order=id')||[];
+    allTasks=await supaFetch('GET','tasks','','?select=*&order=id')||[];
+    setSyncStatus('synced');
+    renderAll();
+  }catch(e){
+    setSyncStatus('error');
+    console.error('Init failed:', e);
+    // Only use seed data if we have nothing at all
+    if(!allClients.length) allClients=SEED_CLIENTS;
+    if(!allProps.length) allProps=SEED_PROPS;
+    if(!allTasks.length) allTasks=SEED_TASKS;
+    renderAll();
+  }
+}
+
+function renderAll(){renderClients();renderTasks();updateMetrics();}
+
+function updateMetrics(){
+  document.getElementById('m-active').textContent=allClients.filter(c=>c.status==='active').length;
+  document.getElementById('m-leads').textContent=allClients.filter(c=>c.status==='lead').length;
+  const s=allClients.filter(c=>allProps.some(p=>p.client_id===c.id&&['offer','under_offer'].includes(p.status))).length;
+  document.getElementById('m-offers').textContent=s;
+  const u=allClients.filter(c=>allProps.some(p=>p.client_id===c.id&&['unconditional','exchanged'].includes(p.status))).length;
+  const mUncond=document.getElementById('m-uncond');
+  if(mUncond) mUncond.textContent=u;
+  document.getElementById('m-tasks').textContent=allTasks.filter(t=>!t.done).length;
+}
+
+function getPropLabel(s){return s==='interested'?'Interested':s==='offer'?'Offer/Live':s==='passed'?'Passed':'Watching';}
+
+function getStatusLabel(s){return s==='active'?'Active':s==='pause'?'Paused':s==='lead'?'Hot Lead':s==='settling'?'Settling':'Unknown';}
+
+function makeEditable(cid, field, currentVal, isDark){
+  const cls = isDark ? 'editable dark' : 'editable';
+  return `<span class="${cls}" onclick="startEdit(this,'${cid}','${field}')" title="Click to edit">${currentVal||'—'}</span>`;
+}
+
+function startEdit(el, cid, field){
+  const cur = el.textContent;
+  const isDark = el.classList.contains('dark');
+  if(field === 'status'){
+    const sel = document.createElement('select');
+    sel.className = 'status-select';
+    ['active','pause','lead','settling'].forEach(s=>{
+      const o = document.createElement('option');
+      o.value=s; o.textContent=getStatusLabel(s);
+      if(s===cur.toLowerCase()||getStatusLabel(s)===cur) o.selected=true;
+      sel.appendChild(o);
+    });
+    el.replaceWith(sel);
+    sel.focus();
+    const commit = async()=>{
+      const newVal = sel.value;
+      await saveClientField(cid, field, newVal);
+    };
+    sel.addEventListener('change', commit);
+    sel.addEventListener('blur', commit);
+    return;
+  }
+  const inp = document.createElement('input');
+  inp.className = 'edit-input' + (isDark?' dark':'');
+  inp.value = cur === '—' ? '' : cur;
+  inp.style.width = Math.max(80, cur.length * 8) + 'px';
+  el.replaceWith(inp);
+  inp.focus(); inp.select();
+  const commit = async()=>{
+    const newVal = inp.value.trim() || cur;
+    await saveClientField(cid, field, newVal);
+  };
+  inp.addEventListener('blur', commit);
+  inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){e.preventDefault();inp.blur();} if(e.key==='Escape'){inp.replaceWith(el);} });
+}
+
+async function saveClientField(cid, field, value){
+  setSyncStatus('syncing');
+  try{
+    await supaFetch('PATCH','clients',{[field]:value},`?id=eq.${cid}`);
+    const c=allClients.find(x=>x.id===cid);
+    if(c){ c[field]=value; }
+    setSyncStatus('synced');
+    // For status: short delay so dropdown can finish before re-render
+    if(field !== 'status'){
+      renderAll();
+    } else {
+      updateMetrics();
+      setTimeout(()=>renderClients(), 300);
+    }
+  }catch(e){ setSyncStatus('error'); }
+}
+
+function makeCard(c){
+  const cp=allProps.filter(p=>p.client_id===c.id);
+  const hasOffer=cp.some(p=>['offer','under_offer','unconditional','exchanged'].includes(p.status));
+  const ph=cp.map(p=>`<div class="prop-item"><div class="prop-left"><div class="prop-addr">${p.addr}</div>${p.note?`<div class="prop-note">${p.note}</div>`:''}</div><div class="prop-right"><select name="prop-${p.id}" class="prop-status-select ${p.status}" onchange="savePropStatus(${p.id},this.value,this)"><option value="interested"${p.status==='interested'?' selected':''}>Interested</option><option value="watching"${p.status==='watching'?' selected':''}>Watching</option><option value="offer"${p.status==='offer'?' selected':''}>Offer/Live</option><option value="under_offer"${p.status==='under_offer'?' selected':''}>Under Offer</option><option value="unconditional"${p.status==='unconditional'?' selected':''}>Unconditional</option><option value="exchanged"${p.status==='exchanged'?' selected':''}>Exchanged</option><option value="passed"${p.status==='passed'?' selected':''}>Passed</option></select><button class="prop-delete" onclick="deleteProp(${p.id},'${c.id}')">✕</button></div></div>`).join('');
+  const statusLabel=getStatusLabel(c.status);
+  const div=document.createElement('div');div.className='client-card';
+  div.innerHTML=`
+    <div class="card-header">
+      <span class="card-name">${makeEditable(c.id,'name',c.name,true)}</span>
+      <div class="badge-group">
+        <select name="status-${c.id}" class="status-select ${c.status}" onchange="saveClientField('${c.id}','status',this.value);this.className='status-select '+this.value" title="Change status">
+          ${['active','pause','lead','settling'].map(s=>`<option value="${s}"${c.status===s?' selected':''}>${getStatusLabel(s)}</option>`).join('')}
+        </select>
+        ${hasOffer?`<select name="offer-${c.id}" class="offer-select ${getOfferLabel(c.id).cls}" onchange="saveOfferStatus('${c.id}',this.value,this)" title="Change offer status">
+          <option value="offer"${getOfferLabel(c.id).val==='offer'?' selected':''}>Offer Live</option>
+          <option value="under_offer"${getOfferLabel(c.id).val==='under_offer'?' selected':''}>Under Offer</option>
+          <option value="unconditional"${getOfferLabel(c.id).val==='unconditional'?' selected':''}>Unconditional</option>
+          <option value="exchanged"${getOfferLabel(c.id).val==='exchanged'?' selected':''}>Exchanged</option>
+          <option value="none">Remove</option>
+        </select>`:''}
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="info-row"><span class="info-icon">$</span><span>Budget &nbsp;</span><span class="val">${makeEditable(c.id,'budget',c.budget,false)}</span></div>
+      <div class="info-row"><span class="info-icon">◈</span><span>Fee cap &nbsp;</span><span class="val">${makeEditable(c.id,'fee_cap',c.fee_cap,false)}</span></div>
+      <div class="info-row"><span class="info-icon">◷</span><span>Started <span class="val">${makeEditable(c.id,'started',c.started,false)}</span> · expires <span class="val">${makeEditable(c.id,'expires',c.expires,false)}</span></span></div>
+      <hr class="divider">
+      <div class="section-label">Properties of interest</div>
+      <div>${ph}</div>
+      <div class="add-prop">
+        <input id="pi-${c.id}" name="new-prop-${c.id}" placeholder="Add address..." onkeydown="if(event.key==='Enter')addProp('${c.id}')"/>
+        <select id="ps-${c.id}" name="ps-${c.id}">
+          <option value="interested">Interested</option>
+          <option value="offer">Offer/Live</option>
+          <option value="watching">Watching</option>
+          <option value="passed">Passed</option>
+        </select>
+        <button onclick="addProp('${c.id}')">+ Add</button>
+      </div>
+      <hr class="divider">
+      <div class="section-label">Notes & brief</div>
+      <textarea class="notes-textarea" id="notes-${c.id}">${c.notes||''}</textarea>
+      <button class="save-btn" onclick="saveNotes('${c.id}')">Save notes</button>
+    </div>`;
+  return div;
+}
+
+function makeSectionHeading(label,count){
+  const div=document.createElement('div');div.className='pipeline-heading';
+  div.innerHTML=`<span class="pipeline-heading-label">${label}</span><span class="pipeline-heading-count">${count}</span><div class="pipeline-heading-line"></div>`;
+  return div;
+}
+
+function renderClients(){
+  const g=document.getElementById('client-grid');g.innerHTML='';
+  const tab = typeof currentTab !== 'undefined' ? currentTab : 'all';
+
+  const isUnconditional=c=>allProps.some(p=>p.client_id===c.id&&['unconditional','exchanged'].includes(p.status));
+  const active=allClients.filter(c=>(c.status==='active'||c.status==='settling')&&!isUnconditional(c));
+  const leads=allClients.filter(c=>c.status==='lead'&&!isUnconditional(c));
+  const paused=allClients.filter(c=>c.status==='pause'&&!isUnconditional(c));
+
+  // Single filtered group for specific tabs
+  if(tab==='active'){
+    const grid=document.createElement('div');grid.className='client-grid';
+    active.forEach(c=>grid.appendChild(makeCard(c)));
+    g.appendChild(grid);
+    return;
+  }
+  if(tab==='lead'){
+    const grid=document.createElement('div');grid.className='client-grid';
+    leads.forEach(c=>grid.appendChild(makeCard(c)));
+    g.appendChild(grid);
+    return;
+  }
+  if(tab==='pause'){
+    const grid=document.createElement('div');grid.className='client-grid';
+    paused.forEach(c=>grid.appendChild(makeCard(c)));
+    g.appendChild(grid);
+    return;
+  }
+  if(tab==='unconditional'){
+    const unconditional=allClients.filter(c=>allProps.some(p=>p.client_id===c.id&&['unconditional','exchanged'].includes(p.status)));
+    const grid=document.createElement('div');grid.className='client-grid';
+    if(unconditional.length){
+      unconditional.forEach(c=>grid.appendChild(makeCard(c)));
+    } else {
+      grid.innerHTML='<div style="font-size:13px;color:#bbb;padding:20px;font-style:italic">No unconditional clients yet — change a property status to Unconditional to see them here.</div>';
+    }
+    g.appendChild(grid);
+    return;
+  }
+
+  // All clients — grouped sections
+  const sections=[
+    {clients:active, label:'Active pipeline', sub:active.length+' clients'},
+    {clients:leads,  label:'Hot leads',       sub:leads.length+' prospects'},
+    {clients:paused, label:'On pause',        sub:paused.length+' clients'},
+  ];
+  sections.forEach(({clients,label,sub})=>{
+    if(!clients.length) return;
+    const sec=document.createElement('div');sec.className='pipeline-section';
+    sec.appendChild(makeSectionHeading(label,sub));
+    const grid=document.createElement('div');grid.className='client-grid';
+    clients.forEach(c=>grid.appendChild(makeCard(c)));
+    sec.appendChild(grid);g.appendChild(sec);
+  });
+}
+
+function renderTasks(){
+  const remaining=allTasks.filter(t=>!t.done).length;
+  const tc=document.getElementById('task-card');
+  const rows=allTasks.map(t=>`<div class="task-row ${t.done?'done':''}" id="tr-${t.id}"><input type="checkbox" class="task-check" ${t.done?'checked':''} onchange="toggleTask(${t.id})"><span class="task-label">${t.label}</span><span class="task-client">${t.client}</span><button class="task-del" onclick="deleteTask(${t.id})">✕</button></div>`).join('');
+  const opts=allClients.map(c=>`<option value="${c.name.replace(/&/g,'and')}">${c.name.split('&')[0].trim().split(' ')[0]}</option>`).join('');
+  tc.innerHTML=`<div class="task-header"><span class="task-header-title">Today's tasks</span><span class="task-header-count">${remaining} remaining</span></div><div class="task-body">${allTasks.length?rows:'<div class="empty-tasks">All clear!</div>'}<div class="add-task-row"><input id="new-task-input" placeholder="Add a task..." onkeydown="if(event.key==='Enter')addTask()"/><select id="new-task-client">${opts}</select><button onclick="addTask()">+ Add</button></div></div>`;
+  updateMetrics();
+}
+
+function getOfferLabel(cid){
+  const p = allProps.find(p=>p.client_id===cid&&['offer','under_offer','unconditional','exchanged'].includes(p.status));
+  if(!p) return {val:'offer',cls:''};
+  const cls = p.status==='unconditional'?'unconditional':p.status==='exchanged'?'exchanged':'';
+  return {val:p.status, cls};
+}
+
+async function saveOfferStatus(cid, newVal, selectEl){
+  const p = allProps.find(p=>p.client_id===cid&&['offer','under_offer','unconditional','exchanged'].includes(p.status));
+  if(!p) return;
+  const targetStatus = newVal==='none' ? 'watching' : newVal;
+  setSyncStatus('syncing');
+  try{
+    await supaFetch('PATCH','properties',{status:targetStatus},`?id=eq.${p.id}`);
+    const fresh = await supaFetch('GET','properties','','?select=*&order=id');
+    if(fresh) allProps = fresh;
+    setSyncStatus('synced');
+  }catch(e){setSyncStatus('error');}
+  renderAll();
+}
+
+async function savePropStatus(id, newStatus, selectEl){
+  if(selectEl && selectEl.className !== undefined){
+    selectEl.className = 'prop-status-select ' + newStatus;
+  }
+  setSyncStatus('syncing');
+  try{
+    await supaFetch('PATCH','properties',{status:newStatus},`?id=eq.${parseInt(id)}`);
+    const p=allProps.find(x=>parseInt(x.id)===parseInt(id));
+    if(p) p.status=newStatus;
+    setSyncStatus('synced');
+  }catch(e){setSyncStatus('error');return;}
+  renderAll();
+}
+
+async function saveNotes(cid){
+  const val=document.getElementById('notes-'+cid).value;
+  setSyncStatus('syncing');
+  try{
+    await supaFetch('PATCH','clients',{notes:val},`?id=eq.${cid}`);
+    const c=allClients.find(x=>x.id===cid);if(c)c.notes=val;
+    setSyncStatus('synced');
+    const btn=document.querySelector(`[onclick="saveNotes('${cid}')"]`);
+    if(btn){btn.textContent='Saved ✓';setTimeout(()=>btn.textContent='Save notes',1500);}
+  }catch(e){setSyncStatus('error');}
+}
+
+async function addProp(cid){
+  const inp=document.getElementById('pi-'+cid),sel=document.getElementById('ps-'+cid);
+  if(!inp||!inp.value.trim())return;
+  setSyncStatus('syncing');
+  try{
+    const r=await supaFetch('POST','properties',{client_id:cid,addr:inp.value.trim(),status:sel.value,note:''});
+    allProps.push(Array.isArray(r)?r[0]:r);inp.value='';
+    setSyncStatus('synced');renderClients();updateMetrics();
+  }catch(e){setSyncStatus('error');}
+}
+
+async function deleteProp(id){
+  setSyncStatus('syncing');
+  try{
+    await supaFetch('DELETE','properties',null,`?id=eq.${parseInt(id)}`);
+    allProps=allProps.filter(p=>parseInt(p.id)!==parseInt(id));
+    setSyncStatus('synced');renderClients();updateMetrics();
+  }catch(e){setSyncStatus('error');}
+}
+
+async function toggleTask(id){
+  const t=allTasks.find(x=>parseInt(x.id)===parseInt(id));if(!t)return;
+  t.done=!t.done;setSyncStatus('syncing');
+  try{
+    await supaFetch('PATCH','tasks',{done:t.done},`?id=eq.${parseInt(id)}`);
+    setSyncStatus('synced');
+  }catch(e){setSyncStatus('error');}
+  renderTasks();
+}
+
+async function deleteTask(id){
+  setSyncStatus('syncing');
+  try{
+    await supaFetch('DELETE','tasks',null,`?id=eq.${parseInt(id)}`);
+    allTasks=allTasks.filter(t=>parseInt(t.id)!==parseInt(id));
+    setSyncStatus('synced');renderTasks();
+  }catch(e){setSyncStatus('error');}
+}
+
+async function addTask(){
+  const inp=document.getElementById('new-task-input'),sel=document.getElementById('new-task-client');
+  if(!inp||!inp.value.trim())return;
+  setSyncStatus('syncing');
+  try{
+    const taskData={label:inp.value.trim(),client:sel?sel.value:'',done:false};
+    console.log('Adding task:', taskData);
+    const r=await supaFetch('POST','tasks',taskData);
+    allTasks.push(Array.isArray(r)?r[0]:r);inp.value='';
+    setSyncStatus('synced');renderTasks();
+  }catch(e){setSyncStatus('error');}
+}
+
+let currentTab = 'active';
+function showTab(t,btn){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  currentTab = t;
+  document.getElementById('tab-clients').style.display=t!=='tasks'?'block':'none';
+  document.getElementById('tab-tasks').style.display=t==='tasks'?'block':'none';
+  if(t!=='tasks') renderClients();
+}
+
+// ── CHAT ASSISTANT ──
+async function executeActions(actions){
+  setSyncStatus('syncing');
+  try{
+    for(const a of actions){
+      if(a.type==='update_client'){
+        await supaFetch('PATCH','clients',a.fields,`?id=eq.${a.id}`);
+        const c=allClients.find(x=>x.id===a.id);if(c)Object.assign(c,a.fields);
+      }else if(a.type==='update_prop'){
+        await supaFetch('PATCH','properties',a.fields,`?id=eq.${a.id}`);
+        const p=allProps.find(x=>x.id===a.id);if(p)Object.assign(p,a.fields);
+      }else if(a.type==='add_prop'){
+        const r=await supaFetch('POST','properties',{client_id:a.client_id,addr:a.addr,status:a.status,note:a.note||''});
+        allProps.push(Array.isArray(r)?r[0]:r);
+      }else if(a.type==='delete_prop'){
+        await supaFetch('DELETE','properties',null,`?id=eq.${a.id}`);
+        allProps=allProps.filter(p=>p.id!==a.id);
+      }else if(a.type==='add_task'){
+        const r=await supaFetch('POST','tasks',{label:a.label,client:a.client,done:false});
+        allTasks.push(Array.isArray(r)?r[0]:r);
+      }else if(a.type==='delete_task'){
+        await supaFetch('DELETE','tasks',null,`?id=eq.${a.id}`);
+        allTasks=allTasks.filter(t=>t.id!==a.id);
+      }else if(a.type==='update_task'){
+        await supaFetch('PATCH','tasks',a.fields,`?id=eq.${a.id}`);
+        const t=allTasks.find(x=>x.id===a.id);if(t)Object.assign(t,a.fields);
+      }
+    }
+    setSyncStatus('synced');
+    renderAll();
+  }catch(e){setSyncStatus('error');console.error(e);}
+}
+
+// Poll every 30s
+setInterval(async()=>{
+  try{
+    allClients=await supaFetch('GET','clients','','?select=*&order=name')||allClients;
+    allProps=await supaFetch('GET','properties','','?select=*&order=id')||allProps;
+    allTasks=await supaFetch('GET','tasks','','?select=*&order=id')||allTasks;
+    renderAll();setSyncStatus('synced');
+  }catch(e){}
+},30000);
+
+init();
+</script>
+</body>
+</html>
