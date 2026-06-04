@@ -177,6 +177,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--text);m
 <script>
 const SUPA_URL='https://qnnrbwcaqvlsjbweilja.supabase.co/rest/v1';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFubnJid2NhcXZsc2pid2VpbGphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0NTY1MjcsImV4cCI6MjA5NjAzMjUyN30.upIazevjqa-dQ7-dJcoDUe12MghFw6oTWhT5JO2DTPI';
+const HEADERS={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
 document.getElementById('hdate').textContent=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
 const SEED_CLIENTS=[
@@ -235,14 +236,58 @@ async function supaFetch(method,table,data,query){
   let url=`${SUPA_URL}/${table}${query||''}`;
   const opts={method,headers:HEADERS};
   if(data)opts.body=JSON.stringify(data);
-  const r=await fetch(url,opts);
-  if(!r.ok){
-    const e=await r.text();
-    console.error(`Supabase ${method} ${table}${query||''} failed:`, r.status, e);
-    showToast(`Save failed (${r.status}): ${e.substring(0,80)}`,'error');
-    throw new Error(e);
+  try{
+    const r=await fetch(url,opts);
+    if(!r.ok){
+      const e=await r.text();
+      console.error(`Supabase ${method} ${table}${query||''} failed:`, r.status, e);
+      if(method!=='GET') showToast(`Save failed (${r.status}): ${e.substring(0,80)}`,'error');
+      throw new Error(e);
+    }
+    try{return await r.json();}catch{return null;}
+  }catch(fetchErr){
+    // Network error (CORS, offline etc) - only throw, don't crash init
+    console.error('Fetch error:', fetchErr.message);
+    throw fetchErr;
   }
-  try{return await r.json();}catch{return null;}
+}
+
+async function initWithRetry(retries=3){
+  for(let i=0;i<retries;i++){
+    try{
+      setSyncStatus('syncing');
+      const clients=await supaFetch('GET','clients','','?select=*&order=name');
+      if(clients&&clients.length){
+        allClients=clients;
+        allProps=await supaFetch('GET','properties','','?select=*&order=id')||[];
+        allTasks=await supaFetch('GET','tasks','','?select=*&order=id')||[];
+        setSyncStatus('synced');
+        renderAll();
+        return;
+      }
+      // Empty — seed
+      for(const c of SEED_CLIENTS) await supaFetch('POST','clients',c);
+      for(const p of SEED_PROPS) await supaFetch('POST','properties',p);
+      for(const t of SEED_TASKS) await supaFetch('POST','tasks',t);
+      allClients=await supaFetch('GET','clients','','?select=*&order=name')||SEED_CLIENTS;
+      allProps=await supaFetch('GET','properties','','?select=*&order=id')||[];
+      allTasks=await supaFetch('GET','tasks','','?select=*&order=id')||[];
+      setSyncStatus('synced');
+      renderAll();
+      return;
+    }catch(e){
+      console.error(`Init attempt ${i+1} failed:`, e.message);
+      if(i<retries-1){
+        await new Promise(r=>setTimeout(r,1500));
+      } else {
+        setSyncStatus('error');
+        if(!allClients.length) allClients=SEED_CLIENTS;
+        if(!allProps.length) allProps=SEED_PROPS;
+        if(!allTasks.length) allTasks=SEED_TASKS;
+        renderAll();
+      }
+    }
+  }
 }
 
 function showToast(msg, type='info'){
@@ -262,30 +307,7 @@ function showToast(msg, type='info'){
 }
 
 async function init(){
-  try{
-    setSyncStatus('syncing');
-    let clients=await supaFetch('GET','clients','','?select=*&order=name');
-    if(!clients||!clients.length){
-      // Only seed if truly empty
-      for(const c of SEED_CLIENTS)await supaFetch('POST','clients',c);
-      for(const p of SEED_PROPS)await supaFetch('POST','properties',p);
-      for(const t of SEED_TASKS)await supaFetch('POST','tasks',t);
-      clients=await supaFetch('GET','clients','','?select=*&order=name')||SEED_CLIENTS;
-    }
-    allClients=clients;
-    allProps=await supaFetch('GET','properties','','?select=*&order=id')||[];
-    allTasks=await supaFetch('GET','tasks','','?select=*&order=id')||[];
-    setSyncStatus('synced');
-    renderAll();
-  }catch(e){
-    setSyncStatus('error');
-    console.error('Init failed:', e);
-    // Only use seed data if we have nothing at all
-    if(!allClients.length) allClients=SEED_CLIENTS;
-    if(!allProps.length) allProps=SEED_PROPS;
-    if(!allTasks.length) allTasks=SEED_TASKS;
-    renderAll();
-  }
+  await initWithRetry(3);
 }
 
 function renderAll(){renderClients();renderTasks();updateMetrics();}
@@ -302,6 +324,18 @@ function updateMetrics(){
 }
 
 function getPropLabel(s){return s==='interested'?'Interested':s==='offer'?'Offer/Live':s==='passed'?'Passed':'Watching';}
+
+function isExpired(expiresStr){
+  if(!expiresStr||expiresStr==='—') return false;
+  const months={'Jan':0,'Feb':1,'Mar':2,'Apr':3,'May':4,'Jun':5,'Jul':6,'Aug':7,'Sep':8,'Oct':9,'Nov':10,'Dec':11};
+  const parts=expiresStr.trim().split(' ');
+  if(parts.length<2) return false;
+  const month=months[parts[0]];
+  const year=parseInt(parts[1]);
+  if(isNaN(month)||isNaN(year)) return false;
+  const expiry=new Date(year, month+1, 0); // last day of that month
+  return expiry < new Date();
+}
 
 function getStatusLabel(s){return s==='active'?'Active':s==='pause'?'Paused':s==='lead'?'Hot Lead':s==='settling'?'Settling':'Unknown';}
 
@@ -388,7 +422,7 @@ function makeCard(c){
     <div class="card-body">
       <div class="info-row"><span class="info-icon">$</span><span>Budget &nbsp;</span><span class="val">${makeEditable(c.id,'budget',c.budget,false)}</span></div>
       <div class="info-row"><span class="info-icon">◈</span><span>Fee cap &nbsp;</span><span class="val">${makeEditable(c.id,'fee_cap',c.fee_cap,false)}</span></div>
-      <div class="info-row"><span class="info-icon">◷</span><span>Started <span class="val">${makeEditable(c.id,'started',c.started,false)}</span> · expires <span class="val">${makeEditable(c.id,'expires',c.expires,false)}</span></span></div>
+      <div class="info-row"><span class="info-icon">◷</span><span>Started <span class="val">${makeEditable(c.id,'started',c.started,false)}</span> · expires <span class="val">${makeEditable(c.id,'expires',c.expires,false)}</span></span>${isExpired(c.expires)?'<span style="font-size:9px;background:#fff0f0;color:#c0392b;border:1px solid #f5c6c6;border-radius:3px;padding:2px 6px;margin-left:6px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Expired</span>':''}</div>
       <hr class="divider">
       <div class="section-label">Properties of interest</div>
       <div>${ph}</div>
