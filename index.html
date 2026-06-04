@@ -117,7 +117,34 @@ body{font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--text);m
 .empty-tasks{font-size:13px;color:#ccc;padding:16px 0;text-align:center;font-style:italic}
 .loading{text-align:center;padding:60px;color:var(--grey);font-size:14px}
 .loading-spinner{display:inline-block;width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--rose);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:12px}
-@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes spin{to{transform:rotate(360deg)}}@media(max-width:768px){
+  .header{padding:12px 16px}
+  .header-date{display:none}
+  .metrics-bar{padding:10px 16px;grid-template-columns:repeat(3,1fr)}
+  .metric{padding:8px 6px}
+  .metric-val{font-size:22px}
+  .metric-label{font-size:9px}
+  .tabs{padding:0 12px;overflow-x:auto;flex-wrap:nowrap}
+  .tab{padding:12px 14px;font-size:10px;white-space:nowrap}
+  .main{padding:14px 12px}
+  .client-grid{flex-direction:column;overflow-x:visible}
+  .client-card{min-width:unset;max-width:unset;width:100%}
+  .card-header{padding:11px 13px}
+  .card-name{font-size:12px}
+  .badge{font-size:8px;padding:2px 5px}
+  .status-select{font-size:8px;padding:2px 6px}
+  .card-body{padding:11px}
+  .prop-item{padding:5px 7px}
+  .add-prop{flex-wrap:wrap}
+  .add-prop input{min-width:0;flex:1}
+  .notes-textarea{min-height:70px}
+  .tasks-container{max-width:100%}
+  .task-label{font-size:12px}
+  .task-client{font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .add-task-row{flex-wrap:wrap;gap:6px}
+  .add-task-row input{width:100%;flex:unset}
+  .add-task-row select{flex:1}
+}
 
 .chat-typing span:nth-child(2){animation-delay:0.2s}
 .chat-typing span:nth-child(3){animation-delay:0.4s}
