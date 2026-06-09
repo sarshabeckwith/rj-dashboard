@@ -538,7 +538,7 @@ function renderTasks(){
   const remaining=allTasks.filter(t=>!t.done).length;
   const tc=document.getElementById('task-card');
   const rows=allTasks.map(t=>`<div class="task-row ${t.done?'done':''}" id="tr-${t.id}"><input type="checkbox" class="task-check" ${t.done?'checked':''} onchange="toggleTask(${t.id})"><span class="task-label">${t.label}</span><span class="task-client">${t.client}</span><button class="task-del" onclick="deleteTask(${t.id})">✕</button></div>`).join('');
-  const opts=allClients.map(c=>`<option value="${c.name.replace(/&/g,'and')}">${c.name.split('&')[0].trim().split(' ')[0]}</option>`).join('');
+  const opts='<option value="Admin">— Admin / Misc —</option>'+allClients.map(c=>`<option value="${c.name.replace(/&/g,'and')}">${c.name.split('&')[0].trim().split(' ')[0]}</option>`).join('');
   tc.innerHTML=`<div class="task-header"><span class="task-header-title">Today's tasks</span><span class="task-header-count">${remaining} remaining</span></div><div class="task-body">${allTasks.length?rows:'<div class="empty-tasks">All clear!</div>'}<div class="add-task-row"><input id="new-task-input" placeholder="Add a task..." onkeydown="if(event.key==='Enter')addTask()"/><select id="new-task-client">${opts}</select><button onclick="addTask()">+ Add</button></div></div>`;
   updateMetrics();
 }
@@ -612,9 +612,10 @@ async function deleteProp(id){
 
 async function toggleTask(id){
   const t=allTasks.find(x=>parseInt(x.id)===parseInt(id));if(!t)return;
-  t.done=!t.done;setSyncStatus('syncing');
+  setSyncStatus('syncing');
   try{
-    await supaFetch('PATCH','tasks',{done:t.done},`?id=eq.${parseInt(id)}`);
+    await supaFetch('DELETE','tasks',null,`?id=eq.${parseInt(id)}`);
+    allTasks=allTasks.filter(x=>parseInt(x.id)!==parseInt(id));
     setSyncStatus('synced');
   }catch(e){setSyncStatus('error');}
   renderTasks();
