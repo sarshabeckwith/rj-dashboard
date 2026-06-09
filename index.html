@@ -24,7 +24,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--text);m
 .sync-status.synced{background:rgba(232,106,100,0.15);color:var(--rose);border:1px solid rgba(232,106,100,0.3)}
 .sync-status.syncing{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.15)}
 .sync-status.error{background:rgba(200,50,50,0.2);color:#ff8080;border:1px solid rgba(200,50,50,0.3)}
-.metrics-bar{background:var(--navy2);padding:14px 28px;display:grid;grid-template-columns:repeat(5,1fr);border-bottom:3px solid var(--rose)}
+.metrics-bar{background:var(--navy2);padding:14px 28px;display:grid;grid-template-columns:repeat(6,1fr);border-bottom:3px solid var(--rose)}
 .metric{padding:10px 16px;text-align:center}
 .metric-val{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:var(--white);line-height:1}
 .metric-label{font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.1em;margin-top:3px}
@@ -43,6 +43,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--text);m
 .badge.pause{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.45);border:1px solid rgba(255,255,255,0.15)}
 .badge.settling{background:var(--rose);color:var(--white)}
 .badge.offer-badge{background:#e67e22;color:var(--white)}
+.badge.contract{background:#2980b9;color:var(--white)}
+.status-select.contract{background:rgba(41,128,185,0.2);color:#2980b9;border:1px solid rgba(41,128,185,0.35)}
 .badge.urgent{background:#c0392b;color:var(--white)}
 .offer-select{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;border-radius:3px;padding:3px 7px;cursor:pointer;outline:none;appearance:auto;-webkit-appearance:auto;background:#e67e22;color:var(--white);border:none}
 .offer-select.unconditional{background:#27ae60}
@@ -117,18 +119,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--text);m
 .empty-tasks{font-size:13px;color:#ccc;padding:16px 0;text-align:center;font-style:italic}
 .loading{text-align:center;padding:60px;color:var(--grey);font-size:14px}
 .loading-spinner{display:inline-block;width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--rose);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:12px}
-@keyframes spin{to{transform:rotate(360deg)}}@media(max-width:768px){
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:768px){
   .header{padding:12px 16px}
+  .logo-name{font-size:11px}
+  .logo-tagline{font-size:11px}
   .header-date{display:none}
-  .metrics-bar{padding:10px 16px;grid-template-columns:repeat(3,1fr)}
+  .metrics-bar{padding:10px 16px;grid-template-columns:repeat(3,1fr);gap:0}
   .metric{padding:8px 6px}
   .metric-val{font-size:22px}
   .metric-label{font-size:9px}
   .tabs{padding:0 12px;overflow-x:auto;flex-wrap:nowrap}
   .tab{padding:12px 14px;font-size:10px;white-space:nowrap}
   .main{padding:14px 12px}
-.client-grid{flex-direction:column!important;overflow-x:visible!important;display:flex!important}
-.client-card{min-width:unset!important;max-width:100%!important;width:100%!important;flex-shrink:0}
+  .client-grid{flex-direction:column;overflow-x:visible}
   .client-card{min-width:unset;max-width:unset;width:100%}
   .card-header{padding:11px 13px}
   .card-name{font-size:12px}
@@ -136,15 +141,26 @@ body{font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--text);m
   .status-select{font-size:8px;padding:2px 6px}
   .card-body{padding:11px}
   .prop-item{padding:5px 7px}
+  .prop-addr{font-size:11px}
+  .prop-note{font-size:10px}
   .add-prop{flex-wrap:wrap}
   .add-prop input{min-width:0;flex:1}
-  .notes-textarea{min-height:70px}
+  .notes-textarea{min-height:70px;font-size:12px}
   .tasks-container{max-width:100%}
   .task-label{font-size:12px}
   .task-client{font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .add-task-row{flex-wrap:wrap;gap:6px}
   .add-task-row input{width:100%;flex:unset}
   .add-task-row select{flex:1}
+  .pipeline-heading-label{font-size:9px}
+  .info-row{font-size:11px}
+}
+
+@media(max-width:480px){
+  .metrics-bar{grid-template-columns:repeat(3,1fr)}
+  .metric-val{font-size:20px}
+  .badge-group{gap:3px}
+  .offer-select{font-size:8px;padding:2px 4px}
 }
 
 .chat-typing span:nth-child(2){animation-delay:0.2s}
@@ -173,6 +189,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--text);m
   <div class="metric"><div class="metric-val" id="m-active">—</div><div class="metric-label">Active</div></div>
   <div class="metric"><div class="metric-val" id="m-leads">—</div><div class="metric-label">Hot Leads</div></div>
   <div class="metric"><div class="metric-val" id="m-offers">—</div><div class="metric-label">Live Offers</div></div>
+  <div class="metric"><div class="metric-val" id="m-contract">—</div><div class="metric-label">Under Contract</div></div>
   <div class="metric dk"><div class="metric-val" id="m-uncond">—</div><div class="metric-label">Unconditional</div></div>
   <div class="metric"><div class="metric-val" id="m-tasks">—</div><div class="metric-label">Tasks remaining</div></div>
 </div>
@@ -181,6 +198,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--text);m
   <button class="tab on" onclick="showTab('active',this)">Active</button>
   <button class="tab" onclick="showTab('lead',this)">Hot Leads</button>
   <button class="tab" onclick="showTab('pause',this)">Paused</button>
+  <button class="tab" onclick="showTab('contract',this)">Under Contract</button>
   <button class="tab" onclick="showTab('unconditional',this)">Unconditional</button>
   <button class="tab" onclick="showTab('tasks',this)">Daily Tasks</button>
 </div>
@@ -348,6 +366,9 @@ function updateMetrics(){
   const u=allClients.filter(c=>allProps.some(p=>p.client_id===c.id&&['unconditional','exchanged'].includes(p.status))).length;
   const mUncond=document.getElementById('m-uncond');
   if(mUncond) mUncond.textContent=u;
+  const ct=allClients.filter(c=>c.status==='contract'||allProps.some(p=>p.client_id===c.id&&['offer','under_offer'].includes(p.status))).length;
+  const mContract=document.getElementById('m-contract');
+  if(mContract) mContract.textContent=ct;
   document.getElementById('m-tasks').textContent=allTasks.filter(t=>!t.done).length;
 }
 
@@ -365,7 +386,7 @@ function isExpired(expiresStr){
   return expiry < new Date();
 }
 
-function getStatusLabel(s){return s==='active'?'Active':s==='pause'?'Paused':s==='lead'?'Hot Lead':s==='settling'?'Settling':'Unknown';}
+function getStatusLabel(s){return s==='active'?'Active':s==='pause'?'Paused':s==='lead'?'Hot Lead':s==='contract'?'Under Contract':s==='settling'?'Settling':'Unknown';}
 
 function makeEditable(cid, field, currentVal, isDark){
   const cls = isDark ? 'editable dark' : 'editable';
@@ -415,12 +436,14 @@ async function saveClientField(cid, field, value){
     const c=allClients.find(x=>x.id===cid);
     if(c){ c[field]=value; }
     setSyncStatus('synced');
-    // For status: short delay so dropdown can finish before re-render
-    if(field !== 'status'){
-      renderAll();
+    if(field==='status'){
+      const tabMap={active:'active',lead:'lead',pause:'pause',contract:'contract',unconditional:'unconditional',settling:'unconditional'};
+      const targetTab=tabMap[value]||'active';
+      const tabBtn=document.querySelector(`.tab[onclick*="'${targetTab}'"]`);
+      if(tabBtn){ currentTab=targetTab; document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on')); tabBtn.classList.add('on'); }
+      setTimeout(()=>renderAll(), 300);
     } else {
-      updateMetrics();
-      setTimeout(()=>renderClients(), 300);
+      renderAll();
     }
   }catch(e){ setSyncStatus('error'); }
 }
@@ -436,7 +459,7 @@ function makeCard(c){
       <span class="card-name">${makeEditable(c.id,'name',c.name,true)}</span>
       <div class="badge-group">
         <select name="status-${c.id}" class="status-select ${c.status}" onchange="saveClientField('${c.id}','status',this.value);this.className='status-select '+this.value" title="Change status">
-          ${['active','pause','lead','settling'].map(s=>`<option value="${s}"${c.status===s?' selected':''}>${getStatusLabel(s)}</option>`).join('')}
+          ${['active','contract','unconditional','pause','lead','settling'].map(s=>`<option value="${s}"${c.status===s?' selected':''}>${getStatusLabel(s)}</option>`).join('')}
         </select>
         ${hasOffer?`<select name="offer-${c.id}" class="offer-select ${getOfferLabel(c.id).cls}" onchange="saveOfferStatus('${c.id}',this.value,this)" title="Change offer status">
           <option value="offer"${getOfferLabel(c.id).val==='offer'?' selected':''}>Offer Live</option>
@@ -483,9 +506,11 @@ function renderClients(){
   const tab = typeof currentTab !== 'undefined' ? currentTab : 'all';
 
   const isUnconditional=c=>allProps.some(p=>p.client_id===c.id&&['unconditional','exchanged'].includes(p.status));
-  const active=allClients.filter(c=>(c.status==='active'||c.status==='settling')&&!isUnconditional(c));
-  const leads=allClients.filter(c=>c.status==='lead'&&!isUnconditional(c));
+  const isUnderContract=c=>c.status==='contract'||allProps.some(p=>p.client_id===c.id&&['offer','under_offer'].includes(p.status));
+  const active=allClients.filter(c=>c.status==='active'&&!isUnconditional(c)&&!isUnderContract(c));
+  const leads=allClients.filter(c=>c.status==='lead'&&!isUnconditional(c)&&!isUnderContract(c));
   const paused=allClients.filter(c=>c.status==='pause'&&!isUnconditional(c));
+  const contract=allClients.filter(c=>isUnderContract(c)&&!isUnconditional(c));
 
   // Single filtered group for specific tabs
   if(tab==='active'){
@@ -497,6 +522,16 @@ function renderClients(){
   if(tab==='lead'){
     const grid=document.createElement('div');grid.className='client-grid';
     leads.forEach(c=>grid.appendChild(makeCard(c)));
+    g.appendChild(grid);
+    return;
+  }
+  if(tab==='contract'){
+    const grid=document.createElement('div');grid.className='client-grid';
+    if(contract.length){
+      contract.forEach(c=>grid.appendChild(makeCard(c)));
+    } else {
+      grid.innerHTML='<div style="font-size:13px;color:#bbb;padding:20px;font-style:italic">No clients under contract yet.</div>';
+    }
     g.appendChild(grid);
     return;
   }
@@ -538,7 +573,7 @@ function renderTasks(){
   const remaining=allTasks.filter(t=>!t.done).length;
   const tc=document.getElementById('task-card');
   const rows=allTasks.map(t=>`<div class="task-row ${t.done?'done':''}" id="tr-${t.id}"><input type="checkbox" class="task-check" ${t.done?'checked':''} onchange="toggleTask(${t.id})"><span class="task-label">${t.label}</span><span class="task-client">${t.client}</span><button class="task-del" onclick="deleteTask(${t.id})">✕</button></div>`).join('');
-  const opts='<option value="Admin">— Admin / Misc —</option>'+allClients.map(c=>`<option value="${c.name.replace(/&/g,'and')}">${c.name.split('&')[0].trim().split(' ')[0]}</option>`).join('');
+  const opts=allClients.map(c=>`<option value="${c.name.replace(/&/g,'and')}">${c.name.split('&')[0].trim().split(' ')[0]}</option>`).join('');
   tc.innerHTML=`<div class="task-header"><span class="task-header-title">Today's tasks</span><span class="task-header-count">${remaining} remaining</span></div><div class="task-body">${allTasks.length?rows:'<div class="empty-tasks">All clear!</div>'}<div class="add-task-row"><input id="new-task-input" placeholder="Add a task..." onkeydown="if(event.key==='Enter')addTask()"/><select id="new-task-client">${opts}</select><button onclick="addTask()">+ Add</button></div></div>`;
   updateMetrics();
 }
@@ -612,10 +647,9 @@ async function deleteProp(id){
 
 async function toggleTask(id){
   const t=allTasks.find(x=>parseInt(x.id)===parseInt(id));if(!t)return;
-  setSyncStatus('syncing');
+  t.done=!t.done;setSyncStatus('syncing');
   try{
-    await supaFetch('DELETE','tasks',null,`?id=eq.${parseInt(id)}`);
-    allTasks=allTasks.filter(x=>parseInt(x.id)!==parseInt(id));
+    await supaFetch('PATCH','tasks',{done:t.done},`?id=eq.${parseInt(id)}`);
     setSyncStatus('synced');
   }catch(e){setSyncStatus('error');}
   renderTasks();
