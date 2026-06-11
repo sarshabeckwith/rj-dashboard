@@ -310,6 +310,7 @@ function setSyncStatus(s){
   const el=document.getElementById('sync-status');
   el.className='sync-status '+s;
   el.textContent=s==='synced'?'Live ✓':s==='syncing'?'Saving...':'Sync error';
+  isSaving=(s==='syncing');
 }
 
 async function supaFetch(method,table,data,query){
@@ -733,16 +734,18 @@ async function addTask(){
   allTasks.push({id:tempId,label,client,done:false});
   inp.value='';
   renderTasks();
+  isSaving=true;
   setSyncStatus('syncing');
   try{
     const r=await fetch(`${SUPA_URL}/tasks`,{method:'POST',headers:HEADERS,body:JSON.stringify({label,client,done:false})});
     if(!r.ok){const e=await r.text();throw new Error(e);}
     const saved=await r.json();
     const newTask=Array.isArray(saved)?saved[0]:saved;
-    // Replace temp with real saved task
     const idx=allTasks.findIndex(t=>t.id===tempId);
     if(idx>-1&&newTask) allTasks[idx]=newTask;
-    setSyncStatus('synced');renderTasks();
+    setSyncStatus('synced');
+    isSaving=false;
+    renderTasks();
   }catch(e){setSyncStatus('error');}
 }
 
@@ -910,13 +913,22 @@ async function executeActions(actions){
   }catch(e){setSyncStatus('error');console.error(e);}
 }
 
-// Poll every 30s
+// Poll every 30s — skip if a save is in progress
+let isSaving=false;
 setInterval(async()=>{
+  if(isSaving)return;
   try{
-    allClients=await supaFetch('GET','clients','','?select=*&order=name')||allClients;
-    allProps=await supaFetch('GET','properties','','?select=*&order=id')||allProps;
-    allTasks=await supaFetch('GET','tasks','','?select=*&order=id')||allTasks;
-    renderAll();setSyncStatus('synced');
+    const [c,p,t]=await Promise.all([
+      fetch(`${SUPA_URL}/clients?select=*&order=name`,{headers:HEADERS}).then(r=>r.json()),
+      fetch(`${SUPA_URL}/properties?select=*&order=id`,{headers:HEADERS}).then(r=>r.json()),
+      fetch(`${SUPA_URL}/tasks?select=*&order=id`,{headers:HEADERS}).then(r=>r.json()),
+    ]);
+    if(!isSaving){
+      allClients=c||allClients;
+      allProps=p||allProps;
+      allTasks=t||allTasks;
+      renderAll();setSyncStatus('synced');
+    }
   }catch(e){}
 },30000);
 
