@@ -194,13 +194,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--text);m
   <div class="metric"><div class="metric-val" id="m-tasks">—</div><div class="metric-label">Tasks remaining</div></div>
 </div>
 
-<div class="tabs">
+<div style="display:flex;align-items:center;justify-content:space-between;background:var(--white);border-bottom:1px solid var(--border);padding-right:16px">
+<div class="tabs" style="border-bottom:none;flex:1">
   <button class="tab on" onclick="showTab('active',this)">Active</button>
   <button class="tab" onclick="showTab('lead',this)">Hot Leads</button>
   <button class="tab" onclick="showTab('pause',this)">Paused</button>
   <button class="tab" onclick="showTab('contract',this)">Under Contract</button>
   <button class="tab" onclick="showTab('unconditional',this)">Unconditional</button>
+  <button class="tab" onclick="showTab('pipeline',this)">Pipeline</button>
   <button class="tab" onclick="showTab('tasks',this)">Daily Tasks</button>
+</div>
+<button onclick="openAddClient()" style="font-size:11px;padding:6px 14px;border:1px solid var(--rose);border-radius:4px;background:transparent;color:var(--rose);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;white-space:nowrap">+ New Client</button>
 </div>
 
 <div class="main">
@@ -216,9 +220,39 @@ body{font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--text);m
       </div>
     </div>
   </div>
+  <div id="tab-pipeline" style="display:none">
+    <div id="pipeline-content"></div>
+  </div>
 </div>
 
 
+
+<!-- ADD CLIENT MODAL -->
+<div id="add-client-modal" style="display:none;position:fixed;inset:0;background:rgba(8,31,44,0.6);z-index:500;align-items:center;justify-content:center">
+  <div style="background:var(--white);border-radius:10px;padding:28px;width:90%;max-width:480px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:15px;font-weight:500;color:var(--navy)">New Client</div>
+      <button onclick="closeAddClient()" style="background:none;border:none;cursor:pointer;font-size:18px;color:#aaa">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <input id="nc-id" placeholder="ID (short slug e.g. smith2026)" style="font-size:12px;padding:8px 10px;border:1px solid var(--border);border-radius:4px;font-family:'DM Sans',sans-serif;color:var(--navy)"/>
+      <input id="nc-name" placeholder="Full name (e.g. John & Jane Smith)" style="font-size:12px;padding:8px 10px;border:1px solid var(--border);border-radius:4px;font-family:'DM Sans',sans-serif;color:var(--navy)"/>
+      <select id="nc-status" style="font-size:12px;padding:8px 10px;border:1px solid var(--border);border-radius:4px;font-family:'DM Sans',sans-serif;color:var(--navy)">
+        <option value="active">Active</option>
+        <option value="lead">Hot Lead</option>
+        <option value="pause">Paused</option>
+        <option value="contract">Under Contract</option>
+      </select>
+      <input id="nc-budget" placeholder="Budget (e.g. $1M – $1.5M)" style="font-size:12px;padding:8px 10px;border:1px solid var(--border);border-radius:4px;font-family:'DM Sans',sans-serif;color:var(--navy)"/>
+      <input id="nc-fee" placeholder="Fee cap (e.g. $25,000)" style="font-size:12px;padding:8px 10px;border:1px solid var(--border);border-radius:4px;font-family:'DM Sans',sans-serif;color:var(--navy)"/>
+      <input id="nc-started" placeholder="Started (e.g. Jun 2026)" style="font-size:12px;padding:8px 10px;border:1px solid var(--border);border-radius:4px;font-family:'DM Sans',sans-serif;color:var(--navy)"/>
+      <input id="nc-expires" placeholder="Expires (e.g. Dec 2026)" style="font-size:12px;padding:8px 10px;border:1px solid var(--border);border-radius:4px;font-family:'DM Sans',sans-serif;color:var(--navy)"/>
+      <textarea id="nc-notes" placeholder="Brief / notes..." style="font-size:12px;padding:8px 10px;border:1px solid var(--border);border-radius:4px;font-family:'DM Sans',sans-serif;color:var(--navy);min-height:80px;resize:vertical"></textarea>
+      <button onclick="submitNewClient()" style="padding:10px;background:var(--navy);color:var(--white);border:none;border-radius:4px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500;margin-top:4px">Add Client</button>
+      <div id="nc-error" style="font-size:11px;color:#c0392b;display:none"></div>
+    </div>
+  </div>
+</div>
 
 <script>
 const SUPA_URL='https://qnnrbwcaqvlsjbweilja.supabase.co/rest/v1';
@@ -477,7 +511,7 @@ function makeCard(c){
       <div class="section-label">Properties of interest</div>
       <div>${ph}</div>
       <div class="add-prop">
-        <input id="pi-${c.id}" name="new-prop-${c.id}" placeholder="Add address..." onkeydown="if(event.key==='Enter')addProp('${c.id}')"/>
+        <input id="pi-${c.id}" name="new-prop-${c.id}" placeholder="Address..." onkeydown="if(event.key==='Enter')addProp('${c.id}')"/>
         <select id="ps-${c.id}" name="ps-${c.id}">
           <option value="interested">Interested</option>
           <option value="offer">Offer/Live</option>
@@ -486,6 +520,7 @@ function makeCard(c){
         </select>
         <button onclick="addProp('${c.id}')">+ Add</button>
       </div>
+      <input id="pn-${c.id}" name="new-prop-note-${c.id}" placeholder="Add notes for this property (optional)..." style="width:100%;font-size:11px;padding:5px 7px;border:1px solid var(--border);border-radius:4px;background:#fafafa;color:var(--navy);margin-top:4px;font-family:'DM Sans',sans-serif"/>
       <hr class="divider">
       <div class="section-label">Notes & brief</div>
       <textarea class="notes-textarea" id="notes-${c.id}">${c.notes||''}</textarea>
@@ -625,12 +660,13 @@ async function saveNotes(cid){
 }
 
 async function addProp(cid){
-  const inp=document.getElementById('pi-'+cid),sel=document.getElementById('ps-'+cid);
+  const inp=document.getElementById('pi-'+cid),sel=document.getElementById('ps-'+cid),note=document.getElementById('pn-'+cid);
   if(!inp||!inp.value.trim())return;
   setSyncStatus('syncing');
   try{
-    const r=await supaFetch('POST','properties',{client_id:cid,addr:inp.value.trim(),status:sel.value,note:''});
-    allProps.push(Array.isArray(r)?r[0]:r);inp.value='';
+    const r=await supaFetch('POST','properties',{client_id:cid,addr:inp.value.trim(),status:sel.value,note:note?note.value.trim():''});
+    allProps.push(Array.isArray(r)?r[0]:r);
+    inp.value='';if(note)note.value='';
     setSyncStatus('synced');renderClients();updateMetrics();
   }catch(e){setSyncStatus('error');}
 }
@@ -683,9 +719,130 @@ function showTab(t,btn){
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   currentTab = t;
-  document.getElementById('tab-clients').style.display=t!=='tasks'?'block':'none';
+  document.getElementById('tab-clients').style.display=(t!=='tasks'&&t!=='pipeline')?'block':'none';
   document.getElementById('tab-tasks').style.display=t==='tasks'?'block':'none';
-  if(t!=='tasks') renderClients();
+  document.getElementById('tab-pipeline').style.display=t==='pipeline'?'block':'none';
+  if(t==='pipeline') renderPipeline();
+  else if(t!=='tasks') renderClients();
+}
+
+function renderPipeline(){
+  const el=document.getElementById('pipeline-content');
+  if(!el)return;
+
+  // Parse fee cap string to number
+  function parseFee(s){
+    if(!s)return 0;
+    return parseInt(s.replace(/[^0-9]/g,''))||0;
+  }
+
+  const active=allClients.filter(c=>c.status==='active');
+  const contract=allClients.filter(c=>c.status==='contract'||allProps.some(p=>p.client_id===c.id&&['offer','under_offer'].includes(p.status)));
+  const uncond=allClients.filter(c=>allProps.some(p=>p.client_id===c.id&&['unconditional','exchanged'].includes(p.status)));
+  const leads=allClients.filter(c=>c.status==='lead');
+
+  const totalActive=active.reduce((s,c)=>s+parseFee(c.fee_cap),0);
+  const totalContract=contract.reduce((s,c)=>s+parseFee(c.fee_cap),0);
+  const totalUncond=uncond.reduce((s,c)=>s+parseFee(c.fee_cap),0);
+  const totalLeads=leads.reduce((s,c)=>s+parseFee(c.fee_cap),0);
+  const grandTotal=totalActive+totalContract+totalUncond+totalLeads;
+
+  function fmt(n){return '$'+n.toLocaleString('en-AU');}
+  function pct(n){return grandTotal?Math.round(n/grandTotal*100):0;}
+
+  function stageBlock(label, clients, total, color){
+    if(!clients.length) return '';
+    const rows=clients.map(c=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f8f8f8;border-radius:4px;margin-bottom:4px;border-left:3px solid ${color}">
+        <span style="font-size:12px;color:var(--navy);font-weight:500">${c.name}</span>
+        <span style="font-size:12px;color:${color};font-weight:500">${fmt(parseFee(c.fee_cap))}</span>
+      </div>`).join('');
+    return `
+      <div style="margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#aaa;font-weight:500">${label}</div>
+          <div style="font-size:13px;font-weight:500;color:${color}">${fmt(total)}</div>
+        </div>
+        <div style="background:${color}22;border-radius:4px;height:6px;margin-bottom:10px">
+          <div style="background:${color};height:6px;border-radius:4px;width:${pct(total)}%"></div>
+        </div>
+        ${rows}
+      </div>`;
+  }
+
+  el.innerHTML=`
+    <div style="max-width:700px">
+      <div style="background:var(--navy);border-radius:8px;padding:20px 24px;margin-bottom:20px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div>
+          <div style="color:rgba(255,255,255,0.5);font-size:10px;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Total Pipeline</div>
+          <div style="color:var(--white);font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:300">${fmt(grandTotal)}</div>
+          <div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:2px">max potential fees</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;justify-content:center">
+          <div style="display:flex;justify-content:space-between"><span style="font-size:11px;color:rgba(255,255,255,0.5)">Active</span><span style="font-size:11px;color:var(--rose)">${fmt(totalActive)}</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="font-size:11px;color:rgba(255,255,255,0.5)">Under Contract</span><span style="font-size:11px;color:#3498db">${fmt(totalContract)}</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="font-size:11px;color:rgba(255,255,255,0.5)">Unconditional</span><span style="font-size:11px;color:#27ae60">${fmt(totalUncond)}</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="font-size:11px;color:rgba(255,255,255,0.5)">Hot Leads</span><span style="font-size:11px;color:#f39c12">${fmt(totalLeads)}</span></div>
+        </div>
+      </div>
+      ${stageBlock('Active — searching', active, totalActive, '#e86a64')}
+      ${stageBlock('Under Contract', contract, totalContract, '#3498db')}
+      ${stageBlock('Unconditional', uncond, totalUncond, '#27ae60')}
+      ${stageBlock('Hot Leads', leads, totalLeads, '#f39c12')}
+    </div>`;
+}
+
+function openAddClient(){
+  const m=document.getElementById('add-client-modal');
+  m.style.display='flex';
+  // Auto-fill started with current month
+  const now=new Date();
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('nc-started').value=months[now.getMonth()]+' '+now.getFullYear();
+  document.getElementById('nc-expires').value=months[(now.getMonth()+6)%12]+' '+(now.getFullYear()+(now.getMonth()>=6?1:0));
+}
+
+function closeAddClient(){
+  document.getElementById('add-client-modal').style.display='none';
+  document.getElementById('nc-error').style.display='none';
+  ['nc-id','nc-name','nc-budget','nc-fee','nc-notes'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+}
+
+async function submitNewClient(){
+  const id=document.getElementById('nc-id').value.trim().toLowerCase().replace(/\s+/g,'-');
+  const name=document.getElementById('nc-name').value.trim();
+  const status=document.getElementById('nc-status').value;
+  const budget=document.getElementById('nc-budget').value.trim();
+  const fee=document.getElementById('nc-fee').value.trim();
+  const started=document.getElementById('nc-started').value.trim();
+  const expires=document.getElementById('nc-expires').value.trim();
+  const notes=document.getElementById('nc-notes').value.trim();
+  const err=document.getElementById('nc-error');
+
+  if(!id||!name){err.textContent='Name and ID are required.';err.style.display='block';return;}
+  if(allClients.find(c=>c.id===id)){err.textContent='ID already exists — choose a different one.';err.style.display='block';return;}
+
+  setSyncStatus('syncing');
+  try{
+    const r=await supaFetch('POST','clients',{id,name,status,budget,fee_cap:fee,started,expires,notes});
+    const newClient=Array.isArray(r)?r[0]:r;
+    allClients.push(newClient||{id,name,status,budget,fee_cap:fee,started,expires,notes});
+    if(!allProps.find(p=>p.client_id===id)) allProps=allProps.concat([]);
+    setSyncStatus('synced');
+    closeAddClient();
+    // Switch to the right tab
+    const tabMap={active:'active',lead:'lead',pause:'pause',contract:'contract'};
+    const targetTab=tabMap[status]||'active';
+    const tabBtn=document.querySelector(`.tab[onclick*="'${targetTab}'"]`);
+    if(tabBtn){currentTab=targetTab;document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));tabBtn.classList.add('on');}
+    renderAll();
+  }catch(e){
+    setSyncStatus('error');
+    err.textContent='Failed to save — please try again.';
+    err.style.display='block';
+  }
 }
 
 // ── CHAT ASSISTANT ──
