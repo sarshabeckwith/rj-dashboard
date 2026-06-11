@@ -292,7 +292,6 @@ async function supaFetch(method,table,data,query){
     }
     try{return await r.json();}catch{return null;}
   }catch(fetchErr){
-    // Network error (CORS, offline etc) - only throw, don't crash init
     console.error('Fetch error:', fetchErr.message);
     throw fetchErr;
   }
@@ -670,9 +669,11 @@ async function addTask(){
   setSyncStatus('syncing');
   try{
     const taskData={label:inp.value.trim(),client:sel?sel.value:'',done:false};
-    console.log('Adding task:', taskData);
     const r=await supaFetch('POST','tasks',taskData);
-    allTasks.push(Array.isArray(r)?r[0]:r);inp.value='';
+    const newTask=Array.isArray(r)?r[0]:r;
+    if(newTask&&newTask.id) allTasks.push(newTask);
+    else allTasks.push({id:Date.now(),label:taskData.label,client:taskData.client,done:false});
+    inp.value='';
     setSyncStatus('synced');renderTasks();
   }catch(e){setSyncStatus('error');}
 }
